@@ -140,6 +140,38 @@ async function run(){
             const result = await usersCollection.deleteOne(query);
             res.send(result)
         });
+        //verifyed seller
+        app.put('/seller/:id', async(req, res)=> {
+            const id = req.params.id;
+            const filter = {_id: ObjectId(id)};
+            const options = { upsert: true };
+            const updatedDoc = {
+                $set:{
+                    verifyed: true
+                }
+            };
+            const result = await usersCollection.updateOne(filter, updatedDoc ,options);
+            res.send(result);
+        });
+        //verifyed product
+        app.put('/product', async(req, res)=> {
+          const email = req.query.email;
+          const query = {
+            email: email
+          };
+          const user = await usersCollection.find(query).toArray();
+          const verifyUser = user.map(usr => {
+            const filter = {sellerEmail: usr.email}
+            const options = {upsert: true};
+            const updatedDoc = {
+                $set:{
+                    veriyedPd: true
+                }
+            }
+            const result =  productsCollection.updateMany(filter, updatedDoc, options);
+            res.send(result)
+          })
+        })
         //delete a buyer
         app.delete('/buyer/:id', async(req, res)=> {
             const id = req.params.id;
