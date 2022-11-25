@@ -74,6 +74,20 @@ async function run(){
             const result = await usersCollection.find(query).toArray();
             res.send(result);
         });
+        //delete a seller
+        app.delete('/seller/:id', async(req, res)=> {
+            const id = req.params.id;
+            const query = {_id: ObjectId(id)};
+            const result = await usersCollection.deleteOne(query);
+            res.send(result)
+        });
+        //delete a buyer
+        app.delete('/buyer/:id', async(req, res)=> {
+            const id = req.params.id;
+            const query = {_id: ObjectId(id)};
+            const result = await usersCollection.deleteOne(query);
+            res.send(result);
+        })
         //find all buyer
         app.get('/buyer', async(req, res)=> {
             const query = {role: 'Buyer'};
