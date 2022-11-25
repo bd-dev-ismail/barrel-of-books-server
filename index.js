@@ -39,6 +39,7 @@ async function run(){
         const usersCollection = client.db("barrelOfBooks").collection('users');
         const productsCollection = client.db("barrelOfBooks").collection('products');
         const ordersCollection = client.db("barrelOfBooks").collection('orders');
+        const paymentsCollection = client.db("barrelOfBooks").collection('payments');
         //jwt create
         app.get('/jwt/:email', async(req ,res)=> {
             const email = req.params.email
@@ -49,20 +50,44 @@ async function run(){
         //payment
         app.post("/create-payment-intent", async(req, res)=> {
             const order = req.body;
+            // console.log(order)
             const price = order.bookPrice;
             const amount = parseFloat(price * 100);
               const paymentIntent = await stripe.paymentIntents.create({
                 currency: "usd",
                 amount: amount,
-                automatic_payment_methods: {
-                  enabled: true,
-                },
                 payment_method_types: ["card"],
               });
                res.send({
                  clientSecret: paymentIntent.client_secret,
                });
         });
+        //store payment
+        app.post('/payments', async(req, res)=> {
+            const payment = req.body;
+            const result = await paymentsCollection.insertOne(payment);
+            const orderId = payment.orderId;
+            const filterOrder = {_id: ObjectId(orderId)};
+            const updateOrder = {
+              $set: {
+                sold: true,
+                transitionId: payment.transitionId,
+              },
+            };
+            const orderResult = await ordersCollection.updateOne(filterOrder, updateOrder);
+            //set in proudct
+            const id = payment.productId;
+            const filter = {_id: ObjectId(id)};
+            const updatedDoc = {
+              $set: {
+                sold: true,
+                transitionId: payment.transitionId,
+              },
+            };
+            const updatedResult = await productsCollection.updateOne(filter, updatedDoc);
+            
+            res.send(result);
+        })
         //get categoires
         app.get('/categories', async(req, res)=> {
             const query = {};
