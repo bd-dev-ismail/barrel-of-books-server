@@ -1,6 +1,7 @@
 const express = require('express');
 const cors = require('cors');
 const { MongoClient, ServerApiVersion, ObjectId } = require("mongodb");
+const jwt = require("jsonwebtoken");
 require('dotenv').config();
 const port = process.env.PORT || 5000;
 const app = express();
@@ -17,12 +18,33 @@ const client = new MongoClient(uri, {
   useUnifiedTopology: true,
   serverApi: ServerApiVersion.v1,
 });
+function verifyJWT(req, res, next){
+    const authHeader = req.headers.authorization;
+    if(!authHeader){
+        return res.status(401).send({message: 'Unauthorized Access!!'})
+    }
+    const token = authHeader.split(' ')[1];
+    jwt.verify(token, process.env.SCRECT_ACCESS_TOKEN, function(err, decoded){
+        if(err){
+            return res.status(403).send({message: 'Forbidded Access!'})
+        }
+        req.decoded = decoded;
+        next();
+    })
+}
 async function run(){
     try{
         const categoriesCollection = client.db('barrelOfBooks').collection('categories');
         const usersCollection = client.db("barrelOfBooks").collection('users');
         const productsCollection = client.db("barrelOfBooks").collection('products');
         const ordersCollection = client.db("barrelOfBooks").collection('orders');
+        //jwt create
+        app.get('/jwt/:email', async(req ,res)=> {
+            const email = req.params.email
+            console.log(email);
+            const token = jwt.sign({email: email}, process.env.SCRECT_ACCESS_TOKEN, {expiresIn: '30d'});
+            res.send({ accessToken: token });
+        })
         //get categoires
         app.get('/categories', async(req, res)=> {
             const query = {};
@@ -138,7 +160,7 @@ async function run(){
             res.send(result);
         });
         //get order for sigle user
-        app.get('/orders', async(req, res)=> {
+        app.get('/orders', verifyJWT, async(req, res)=> {
             const email = req.query.email;
             const query = {email: email}
             const result = await ordersCollection.find(query).toArray();
