@@ -48,6 +48,43 @@ async function run(){
             const query = { productCategoryId : id};
             const result = await productsCollection.find(query).toArray();
             res.send(result);
+        });
+        //get product for signle seller
+        app.get('/products', async(req, res)=> {
+            const email = req.query.email;
+            const query = {
+              sellerEmail: email,
+            };
+            const result = await productsCollection.find(query).toArray();
+            res.send(result);
+        });
+        //delete a product
+        app.delete('/products/:id', async(req, res)=> {
+            const id = req.params.id;
+            console.log(id);
+            const query = {_id: ObjectId(id)};
+            const result = await productsCollection.deleteOne(query);
+            res.send(result);
+        });
+        //advesite product
+        app.put('/adproduct/:id',async(req, res)=> {
+            
+            const id = req.params.id;
+            const filter = {_id: ObjectId(id)};
+            const options = { upsert: true };
+            const updatedDoc = {
+                $set: {
+                    advertise: true,
+                }
+            }
+            const result = await productsCollection.updateOne(filter, updatedDoc, options);
+            res.send(result);
+        });
+        //find advertiseable product
+        app.get('/adproduct', async(req, res)=> {
+            const query = {advertise: true}
+            const result = await productsCollection.find(query).toArray();
+            res.send(result);
         })
         //create user data
         app.post('/users', async(req, res)=> {
