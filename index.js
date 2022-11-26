@@ -44,14 +44,24 @@ async function run(){
         //jwt create
         app.get('/jwt/:email', async(req ,res)=> {
             const email = req.params.email
-            console.log(email);
+            
             const token = jwt.sign({email: email}, process.env.SCRECT_ACCESS_TOKEN, {expiresIn: '30d'});
             res.send({ accessToken: token });
         });
+        //verify admin 
+        const verifyAdmin = async(req, res, next)=> {
+            const decodedEamil = req.decoded.email;
+            const query = {email: decodedEamil};
+            const user = await usersCollection.findOne(query);
+            if(user.role !== 'Admin'){
+                return res.status(403).send({message: 'Forbidded Access!'})
+            }
+            next();
+        }
         //payment
         app.post("/create-payment-intent", async(req, res)=> {
             const order = req.body;
-            // console.log(order)
+            
             const price = order.bookPrice;
             const amount = parseFloat(price * 100);
               const paymentIntent = await stripe.paymentIntents.create({
@@ -96,14 +106,14 @@ async function run(){
             res.send(result);
         });
         //get single category getails
-        app.get('/categories/:id', async(req, res)=> {
+        app.get('/categories/:id', verifyJWT, async(req, res)=> {
             const id = req.params.id;
             const query = {_id: ObjectId(id)};
             const result = await categoriesCollection.findOne(query);
             res.send(result);
         })
         //create frist product
-        app.post('/products', async(req, res)=> {
+        app.post('/products',verifyJWT, async(req, res)=> {
             const product = req.body;
             const result = await productsCollection.insertOne(product);
             res.send(result);
@@ -118,8 +128,12 @@ async function run(){
             res.send(result);
         });
         //get product for signle seller
-        app.get('/products', async(req, res)=> {
+        app.get('/products',verifyJWT, async(req, res)=> {
             const email = req.query.email;
+            const decodedEamil = req.decoded.email;
+            if(decodedEamil !== req.query.email){
+                return res.status(401).send({message: 'Forbidden Access!'})
+            }
             const query = {
               sellerEmail: email,
             };
@@ -127,16 +141,17 @@ async function run(){
             res.send(result);
         });
         //delete a product
-        app.delete('/products/:id', async(req, res)=> {
+        app.delete('/products/:id',verifyJWT, async(req, res)=> {
             const id = req.params.id;
             
+            // console.log(decodedEamil)
             const query = {_id: ObjectId(id)};
             const result = await productsCollection.deleteOne(query);
             res.send(result);
         });
-        app.delete('/products/:id', async(req, res)=> {
+        app.delete('/products/:id',verifyJWT, async(req, res)=> {
             const id = req.params.id;
-            console.log(id);
+            
             const query = {_id: ObjectId(id)};
             const updateResult = await reportsCollection.deleteOne(updateQuery);
             const result = await productsCollection.deleteOne(query);
@@ -250,6 +265,10 @@ async function run(){
         //get order for sigle user
         app.get('/orders', verifyJWT, async(req, res)=> {
             const email = req.query.email;
+             const decodedEamil = req.decoded.email;
+             if (decodedEamil !== req.query.email) {
+               return res.status(401).send({ message: "Forbidden Access!" });
+             }
             const query = {email: email}
             const result = await ordersCollection.find(query).toArray();
             res.send(result);
@@ -280,7 +299,23 @@ async function run(){
              const query = { _id: ObjectId(id) };
              const result = await reportsCollection.deleteOne(query);
              res.send(result);
-        })
+        });
+        //-------------------user role
+        app.get('/admin', async(req, res)=> {
+            const email = req.query.email;
+            const query = {$and: [{email: email}, {role: 'Admin'}]};
+            const result = await usersCollection.findOne(query);
+            res.send(result);
+        });
+        app.get('/sellerrole', async(req, res)=> {
+              const email = req.query.email;
+              const query = { email: email};
+              const options = {
+                role: 'Seller'
+              }
+              const result = await usersCollection.findOne(query, options);
+              res.send(result);
+        });
     }
     finally{
 
