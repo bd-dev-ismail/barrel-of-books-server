@@ -110,7 +110,9 @@ async function run(){
         //get product with categories
         app.get('/products/:id', async(req, res)=> {
             const id = req.params.id;
-            const query = { productCategoryId : id};
+            const query = {
+              $and: [{ productCategoryId: id }, {sold: false}],
+            };
             const result = await productsCollection.find(query).toArray();
             res.send(result);
         });
@@ -147,7 +149,9 @@ async function run(){
         });
         //find advertiseable product
         app.get('/adproduct', async(req, res)=> {
-            const query = {advertise: true}
+            const query = {
+              $and: [{ advertise: true }, {sold: false}],
+            };
             const result = await productsCollection.find(query).toArray();
             res.send(result);
         })
