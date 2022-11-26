@@ -129,8 +129,16 @@ async function run(){
         //delete a product
         app.delete('/products/:id', async(req, res)=> {
             const id = req.params.id;
+            
+            const query = {_id: ObjectId(id)};
+            const result = await productsCollection.deleteOne(query);
+            res.send(result);
+        });
+        app.delete('/products/:id', async(req, res)=> {
+            const id = req.params.id;
             console.log(id);
             const query = {_id: ObjectId(id)};
+            const updateResult = await reportsCollection.deleteOne(updateQuery);
             const result = await productsCollection.deleteOne(query);
             res.send(result);
         });
@@ -264,6 +272,14 @@ async function run(){
             const query = {};
             const result = await reportsCollection.find(query).toArray();
             res.send(result);
+        });
+        //remove reported  product
+        app.delete('/reports/:id', async(req, res)=> {
+             const id = req.params.id;
+             
+             const query = { _id: ObjectId(id) };
+             const result = await reportsCollection.deleteOne(query);
+             res.send(result);
         })
     }
     finally{
