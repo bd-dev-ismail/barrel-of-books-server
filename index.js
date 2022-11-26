@@ -40,6 +40,7 @@ async function run(){
         const productsCollection = client.db("barrelOfBooks").collection('products');
         const ordersCollection = client.db("barrelOfBooks").collection('orders');
         const paymentsCollection = client.db("barrelOfBooks").collection('payments');
+        const reportsCollection = client.db("barrelOfBooks").collection('reports');
         //jwt create
         app.get('/jwt/:email', async(req ,res)=> {
             const email = req.params.email
@@ -250,6 +251,18 @@ async function run(){
             const id = req.params.id;
             const query = {_id: ObjectId(id)};
             const result = await ordersCollection.findOne(query);
+            res.send(result);
+        });
+        //create report
+        app.post('/reports', async(req, res)=> {
+            const product = req.body;
+            const result = await reportsCollection.insertOne(product);
+            res.send(result);
+        });
+        //get report all
+        app.get('/reports', async(req, res)=> {
+            const query = {};
+            const result = await reportsCollection.find(query).toArray();
             res.send(result);
         })
     }
