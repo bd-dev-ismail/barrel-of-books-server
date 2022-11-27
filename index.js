@@ -57,6 +57,18 @@ async function run(){
                 return res.status(403).send({message: 'Forbidded Access!'})
             }
             next();
+        };
+        //verify seller
+        const veirifySeller = async(req, res, next)=> {
+            const decodedEamil = req.decoded.email;
+            const query = {role: 'Seller'};
+            const result = await usersCollection.findOne(query);
+            const sellerEmail = result.filter(seller => {
+                const email = seller.email;
+                if(decodedEamil !== email){
+                    return res.status(403).send({message: 'Forbidden Access!!!'});
+                }
+            })
         }
         //payment
         app.post("/create-payment-intent", async(req, res)=> {
@@ -113,7 +125,7 @@ async function run(){
             res.send(result);
         })
         //create frist product
-        app.post('/products',verifyJWT, async(req, res)=> {
+        app.post('/products',verifyJWT,veirifySeller, async(req, res)=> {
             const product = req.body;
             const result = await productsCollection.insertOne(product);
             res.send(result);
@@ -141,7 +153,7 @@ async function run(){
             res.send(result);
         });
         //delete a product
-        app.delete('/products/:id',verifyJWT, async(req, res)=> {
+        app.delete('/products/:id',verifyJWT,verifyAdmin, async(req, res)=> {
             const id = req.params.id;
             
             // console.log(decodedEamil)
@@ -149,7 +161,7 @@ async function run(){
             const result = await productsCollection.deleteOne(query);
             res.send(result);
         });
-        app.delete('/products/:id',verifyJWT, async(req, res)=> {
+        app.delete('/products/:id',verifyJWT,verifyAdmin, async(req, res)=> {
             const id = req.params.id;
             
             const query = {_id: ObjectId(id)};
@@ -199,20 +211,20 @@ async function run(){
             res.send(result);
         });
         //find all seller
-        app.get('/seller', async(req, res)=> {
+        app.get('/seller',verifyJWT, verifyAdmin, async(req, res)=> {
             const query = {role: 'Seller'};
             const result = await usersCollection.find(query).toArray();
             res.send(result);
         });
         //delete a seller
-        app.delete('/seller/:id', async(req, res)=> {
+        app.delete('/seller/:id',verifyJWT, verifyAdmin, async(req, res)=> {
             const id = req.params.id;
             const query = {_id: ObjectId(id)};
             const result = await usersCollection.deleteOne(query);
             res.send(result)
         });
         //verifyed seller
-        app.put('/seller/:id', async(req, res)=> {
+        app.put('/seller/:id',verifyJWT, verifyAdmin, async(req, res)=> {
             const id = req.params.id;
             const filter = {_id: ObjectId(id)};
             const options = { upsert: true };
@@ -225,7 +237,7 @@ async function run(){
             res.send(result);
         });
         //verifyed product
-        app.put('/product', async(req, res)=> {
+        app.put('/product',verifyJWT, verifyAdmin, async(req, res)=> {
           const email = req.query.email;
           const query = {
             email: email
@@ -244,14 +256,14 @@ async function run(){
           })
         })
         //delete a buyer
-        app.delete('/buyer/:id', async(req, res)=> {
+        app.delete('/buyer/:id',verifyJWT, verifyAdmin, async(req, res)=> {
             const id = req.params.id;
             const query = {_id: ObjectId(id)};
             const result = await usersCollection.deleteOne(query);
             res.send(result);
         })
         //find all buyer
-        app.get('/buyer', async(req, res)=> {
+        app.get('/buyer',verifyJWT, verifyAdmin, async(req, res)=> {
             const query = {role: 'Buyer'};
             const result = await usersCollection.find(query).toArray();
             res.send(result);
@@ -287,7 +299,7 @@ async function run(){
             res.send(result);
         });
         //get report all
-        app.get('/reports', async(req, res)=> {
+        app.get('/reports',verifyJWT, verifyAdmin, async(req, res)=> {
             const query = {};
             const result = await reportsCollection.find(query).toArray();
             res.send(result);
