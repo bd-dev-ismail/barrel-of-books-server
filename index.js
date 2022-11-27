@@ -58,18 +58,32 @@ async function run(){
             }
             next();
         };
+        
+
         //verify seller
-        const veirifySeller = async(req, res, next)=> {
-            const decodedEamil = req.decoded.email;
-            const query = {role: 'Seller'};
-            const result = await usersCollection.findOne(query);
-            const sellerEmail = result.filter(seller => {
-                const email = seller.email;
-                if(decodedEamil !== email){
-                    return res.status(403).send({message: 'Forbidden Access!!!'});
-                }
-            })
-        }
+        // const veirifySeller = async(req, res, next)=> {
+        //     const decodedEamil = req.decoded.email;
+        //     const query = {role: 'Seller'};
+        //     const allSeller = await usersCollection.find(query).toArray();
+        //     // const sellerEmail = result.forEach(seller => {
+        //     //     const email = seller.email;
+        //     //     console.log(email)
+        //     //     if(decodedEamil !== email){
+        //     //         return res.status(403).send({message: 'Forbidden Access!!!'});
+        //     //     }
+        //     // });
+        //    allSeller.forEach(seler => {
+        //     console.log(seler)
+        //     const signleSeller = seler.find(
+        //       (seller) => seller.email === decodedEamil
+        //     );
+        //     console.log(signleSeller)
+        //     // if(!singleSeller){
+        //     //     return res.status(403).send({ message: "Forbidden Access!!!" });
+        //     // }
+        //    })
+        //     next();
+        // }
         //payment
         app.post("/create-payment-intent", async(req, res)=> {
             const order = req.body;
@@ -125,8 +139,12 @@ async function run(){
             res.send(result);
         })
         //create frist product
-        app.post('/products',verifyJWT,veirifySeller, async(req, res)=> {
+        app.post('/products',verifyJWT, async(req, res)=> {
             const product = req.body;
+            const decodedEamil = req.decoded.email;
+            if(product.sellerEmail !== decodedEamil){
+                return res.status(403).send({message: 'Forbidden Access!!'})
+            }
             const result = await productsCollection.insertOne(product);
             res.send(result);
         });
@@ -153,19 +171,22 @@ async function run(){
             res.send(result);
         });
         //delete a product
-        app.delete('/products/:id',verifyJWT,verifyAdmin, async(req, res)=> {
+        // app.delete('/products/:id',verifyJWT, async(req, res)=> {
+        //     const id = req.params.id;
+            
+        //     // console.log(decodedEamil)
+        //     const query = {_id: ObjectId(id)};
+        //     const result = await productsCollection.deleteOne(query);
+        //     res.send(result);
+        // });
+        app.delete('/products/:id',verifyJWT, async(req, res)=> {
             const id = req.params.id;
             
-            // console.log(decodedEamil)
             const query = {_id: ObjectId(id)};
-            const result = await productsCollection.deleteOne(query);
-            res.send(result);
-        });
-        app.delete('/products/:id',verifyJWT,verifyAdmin, async(req, res)=> {
-            const id = req.params.id;
-            
-            const query = {_id: ObjectId(id)};
-            const updateResult = await reportsCollection.deleteOne(updateQuery);
+            const reportQuery = { productId : id};
+            const orderQuery = {bookID: id}
+            const removeOrder = await ordersCollection.deleteOne(orderQuery);
+            const updateResult = await reportsCollection.deleteOne(reportQuery);
             const result = await productsCollection.deleteOne(query);
             res.send(result);
         });
