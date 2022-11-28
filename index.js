@@ -215,8 +215,9 @@ async function run(){
         //create user data
         app.post('/users', async(req, res)=> {
             const user = req.body;
+            const email = user.email;
             const result = await usersCollection.insertOne(user);
-            res.send(result);
+            res.send(result);  
         });
         //get all user data
         app.get('/users', async(req ,res)=> {
