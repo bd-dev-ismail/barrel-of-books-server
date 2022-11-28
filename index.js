@@ -85,7 +85,7 @@ async function run(){
         //     next();
         // }
         //payment
-        app.post("/create-payment-intent", async(req, res)=> {
+        app.post("/create-payment-intent",verifyJWT, async(req, res)=> {
             const order = req.body;
             
             const price = order.bookPrice;
@@ -100,7 +100,7 @@ async function run(){
                });
         });
         //store payment
-        app.post('/payments', async(req, res)=> {
+        app.post('/payments',verifyJWT, async(req, res)=> {
             const payment = req.body;
             const result = await paymentsCollection.insertOne(payment);
             const orderId = payment.orderId;
@@ -245,6 +245,14 @@ async function run(){
             const result = await usersCollection.deleteOne(query);
             res.send(result)
         });
+        app.delete('/myproudct', async(req, res)=> {
+            const email = req.query.email;
+            const query = {
+              sellerEmail: email,
+            };
+            const result = await productsCollection.deleteMany(query);
+            res.send(result)
+        })
         //verifyed seller
         app.put('/seller/:id',verifyJWT, verifyAdmin, async(req, res)=> {
             const id = req.params.id;
